@@ -1,7 +1,7 @@
 #include "BLE.h"
+#include "stm32f103xb.h"
 #include "stm32f1xx.h"
 #include "DHT11.h"
- 
 /*
 *** USART1  配置串口1与HC-05通信 ***
  

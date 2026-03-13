@@ -20,6 +20,7 @@
 #include "main.h"
 #include "DHT11.h"
 #include "OLED.h"
+#include "LED.h"
 #include "stdio.h"
 #include "usart.h"
 
@@ -80,7 +81,6 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -92,6 +92,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_USART1_UART_Init(); // 初始化串口，用于HC-05通信
   /* USER CODE BEGIN 2 */
 // --- 硬件初始化 ---
     OLED_Init();        // OLED 初始化
@@ -101,6 +102,8 @@ int main(void)
     OLED_ShowString(2, 2, "Temp:"); 
     // 在第2行显示 "Humi:"
     OLED_ShowString(4, 2, "Humi:"); 
+    // LED 用于指示程序是否在循环中运行
+    LED_Init();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -108,6 +111,9 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
+    // LED 翻转：确认主循环在跑（如果 LED 不闪，说明程序卡住了）
+    LED1_Turn();
+
     DHT11_RECdata(); // 获取 DHT11 数据
     if(dht11_error_flag == 0)
     {
@@ -122,7 +128,13 @@ int main(void)
       sprintf(humi_str, "%d.%d %%", rec_data[0], rec_data[1]);
       OLED_ShowString(2, 70, temp_str); // 显示温度
       OLED_ShowString(4, 70, humi_str); // 显示湿度
+      
+      // 通过串口发送到HC-05
+      char buf[50];
+      sprintf(buf, "T:%d.%d H:%d.%d\r\n", rec_data[2], rec_data[3], rec_data[0], rec_data[1]);
+      send_string(buf);
     }
+    HAL_Delay(3000); // 延时3秒，避免读取过于频繁，提高 DHT11 稳定性
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */

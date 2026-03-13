@@ -48,6 +48,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     Hardware/DHT11.c
     Hardware/OLED.c
     System/Delay.c
+    Hardware/usart.c
     Hardware/Key.c
     Hardware/LED.c
 )

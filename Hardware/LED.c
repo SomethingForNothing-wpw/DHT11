@@ -1,4 +1,6 @@
+#include "stm32f103xb.h"
 #include "stm32f1xx.h"                  // Device header
+#include "stm32f1xx_hal_gpio.h"
 
 /**
   * 函    数：LED初始化
@@ -18,8 +20,7 @@ void LED_Init(void)
 	HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);						//将PA1和PA2引脚初始化为推挽输出
 	
 	/*设置GPIO初始化后的默认电平*/
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);				//设置PA1引脚为高电平
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, GPIO_PIN_SET);				//设置PA2引脚为高电平
+	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);				//设置PA1引脚为高电平			//设置PA2引脚为高电平
 }
 
 /**
@@ -49,13 +50,13 @@ void LED1_OFF(void)
   */
 void LED1_Turn(void)
 {
-	if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_1) == GPIO_PIN_RESET)		//获取输出寄存器的状态，如果当前引脚输出低电平
+	if (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13) == GPIO_PIN_RESET)		//获取输出寄存器的状态，如果当前引脚输出低电平
 	{
-		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);					//则设置PA1引脚为高电平
+		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);					//则设置PA1引脚为高电平
 	}
 	else													//否则，即当前引脚输出高电平
 	{
-		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);					//则设置PA1引脚为低电平
+		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);					//则设置PA1引脚为低电平
 	}
 }
 
