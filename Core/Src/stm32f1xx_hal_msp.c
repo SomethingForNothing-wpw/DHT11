@@ -70,8 +70,11 @@ void HAL_MspInit(void)
   __HAL_RCC_PWR_CLK_ENABLE();
 
   /* System interrupt init*/
+<<<<<<< HEAD
   /* PendSV_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(PendSV_IRQn, 15, 0);
+=======
+>>>>>>> 1843ad9ec5044a61c52c5d0eedf03f57c55b3d7a
 
   /** NOJTAG: JTAG-DP Disabled and SW-DP Enabled
   */

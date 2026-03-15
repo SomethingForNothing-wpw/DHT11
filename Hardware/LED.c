@@ -30,7 +30,11 @@ void LED_Init(void)
   */
 void LED1_ON(void)
 {
+<<<<<<< HEAD
 	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);		//设置PA1引脚为低电平
+=======
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);		//设置PA1引脚为低电平
+>>>>>>> 1843ad9ec5044a61c52c5d0eedf03f57c55b3d7a
 }
 
 /**
@@ -40,7 +44,11 @@ void LED1_ON(void)
   */
 void LED1_OFF(void)
 {
+<<<<<<< HEAD
 	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);		//设置PA1引脚为高电平
+=======
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);		//设置PA1引脚为高电平
+>>>>>>> 1843ad9ec5044a61c52c5d0eedf03f57c55b3d7a
 }
 
 /**

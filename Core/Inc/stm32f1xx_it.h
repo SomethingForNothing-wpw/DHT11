@@ -51,7 +51,13 @@ void HardFault_Handler(void);
 void MemManage_Handler(void);
 void BusFault_Handler(void);
 void UsageFault_Handler(void);
+<<<<<<< HEAD
 void DebugMon_Handler(void);
+=======
+void SVC_Handler(void);
+void DebugMon_Handler(void);
+void PendSV_Handler(void);
+>>>>>>> 1843ad9ec5044a61c52c5d0eedf03f57c55b3d7a
 void SysTick_Handler(void);
 /* USER CODE BEGIN EFP */
 

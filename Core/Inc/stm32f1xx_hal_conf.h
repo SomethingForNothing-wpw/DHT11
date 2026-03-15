@@ -65,8 +65,13 @@
 /*#define HAL_SPI_MODULE_ENABLED   */
 /*#define HAL_SRAM_MODULE_ENABLED   */
 /*#define HAL_TIM_MODULE_ENABLED   */
+<<<<<<< HEAD
 /*#define HAL_UART_MODULE_ENABLED   */
 /*#define HAL_USART_MODULE_ENABLED   */
+=======
+/*#define HAL_UART_MODULE_ENABLED   */  // STM32F1 直接使用寄存器，无需 HAL UART/USART
+/*#define HAL_USART_MODULE_ENABLED */
+>>>>>>> 1843ad9ec5044a61c52c5d0eedf03f57c55b3d7a
 /*#define HAL_WWDG_MODULE_ENABLED   */
 
 #define HAL_CORTEX_MODULE_ENABLED

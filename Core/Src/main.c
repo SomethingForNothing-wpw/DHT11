@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+<<<<<<< HEAD
 #include "cmsis_os.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -29,6 +30,17 @@
 #include "usart.h"
 #include "FreeRTOS.h"
 #include "task.h"
+=======
+#include "DHT11.h"
+#include "OLED.h"
+#include "LED.h"
+#include "stdio.h"
+#include "usart.h"
+
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
+
+>>>>>>> 1843ad9ec5044a61c52c5d0eedf03f57c55b3d7a
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -49,6 +61,7 @@ void SystemClock_Config(void);
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+<<<<<<< HEAD
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
 const osThreadAttr_t defaultTask_attributes = {
@@ -79,17 +92,26 @@ static const osThreadAttr_t hc05TxTask_attributes = {
   .stack_size = 512 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
+=======
+
+/* USER CODE BEGIN PV */
+>>>>>>> 1843ad9ec5044a61c52c5d0eedf03f57c55b3d7a
 
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
+<<<<<<< HEAD
 void StartDefaultTask(void *argument);
 
 /* USER CODE BEGIN PFP */
 static void Dht11OledTask(void *argument);
 static void Hc05TxTask(void *argument);
+=======
+/* USER CODE BEGIN PFP */
+
+>>>>>>> 1843ad9ec5044a61c52c5d0eedf03f57c55b3d7a
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -139,6 +161,7 @@ int main(void)
     LED_Init();
   /* USER CODE END 2 */
 
+<<<<<<< HEAD
   /* Init scheduler */
   osKernelInitialize();
 
@@ -195,12 +218,41 @@ int main(void)
 
   /* We should never get here as control is now taken by the scheduler */
 
+=======
+>>>>>>> 1843ad9ec5044a61c52c5d0eedf03f57c55b3d7a
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
     /* USER CODE END WHILE */
+<<<<<<< HEAD
 
+=======
+    // LED 翻转：确认主循环在跑（如果 LED 不闪，说明程序卡住了）
+    LED1_Turn();
+
+    DHT11_RECdata(); // 获取 DHT11 数据
+    if(dht11_error_flag == 0)
+    {
+      // 获取数据失败，显示错误提示
+      OLED_ShowString(2, 70, "DHT11 Error!   ");
+    }
+    else
+    {
+      // 获取数据成功，显示温湿度
+      char temp_str[16], humi_str[16];
+      sprintf(temp_str, "%d.%d C", rec_data[2], rec_data[3]);
+      sprintf(humi_str, "%d.%d %%", rec_data[0], rec_data[1]);
+      OLED_ShowString(2, 70, temp_str); // 显示温度
+      OLED_ShowString(4, 70, humi_str); // 显示湿度
+      
+      // 通过串口发送到HC-05
+      char buf[50];
+      sprintf(buf, "T:%d.%d H:%d.%d\r\n", rec_data[2], rec_data[3], rec_data[0], rec_data[1]);
+      send_string(buf);
+    }
+    HAL_Delay(3000); // 延时3秒，避免读取过于频繁，提高 DHT11 稳定性
+>>>>>>> 1843ad9ec5044a61c52c5d0eedf03f57c55b3d7a
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
@@ -287,6 +339,7 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+<<<<<<< HEAD
 static void Dht11OledTask(void *argument)
 {
   (void)argument;
@@ -402,6 +455,11 @@ void StartDefaultTask(void *argument)
   /* USER CODE END 5 */
 }
 
+=======
+
+/* USER CODE END 4 */
+
+>>>>>>> 1843ad9ec5044a61c52c5d0eedf03f57c55b3d7a
 /**
   * @brief  This function is executed in case of error occurrence.
   * @retval None
