@@ -18,15 +18,17 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "DHT11.h"
-#include "OLED.h"
-#include "LED.h"
-#include "stdio.h"
-#include "usart.h"
+#include "cmsis_os.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include <stdio.h>
+#include "DHT11.h"
+#include "OLED.h"
+#include "LED.h"
+#include "usart.h"
+#include "FreeRTOS.h"
+#include "task.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -47,16 +49,47 @@ void SystemClock_Config(void);
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
-
+/* Definitions for defaultTask */
+osThreadId_t defaultTaskHandle;
+const osThreadAttr_t defaultTask_attributes = {
+  .name = "defaultTask",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
 /* USER CODE BEGIN PV */
+typedef struct
+{
+  uint8_t humi_h;
+  uint8_t humi_l;
+  uint8_t temp_h;
+  uint8_t temp_l;
+  uint8_t valid;
+} dht11_data_t;
+
+static osMessageQueueId_t g_dht11_queue = NULL;
+
+static const osThreadAttr_t dht11OledTask_attributes = {
+  .name = "DHT11_OLED",
+  .stack_size = 512 * 4,
+  .priority = (osPriority_t) osPriorityAboveNormal,
+};
+
+static const osThreadAttr_t hc05TxTask_attributes = {
+  .name = "HC05_TX",
+  .stack_size = 512 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
 
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
-/* USER CODE BEGIN PFP */
+void StartDefaultTask(void *argument);
 
+/* USER CODE BEGIN PFP */
+static void Dht11OledTask(void *argument);
+static void Hc05TxTask(void *argument);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -106,35 +139,68 @@ int main(void)
     LED_Init();
   /* USER CODE END 2 */
 
+  /* Init scheduler */
+  osKernelInitialize();
+
+  /* USER CODE BEGIN RTOS_MUTEX */
+  /* add mutexes, ... */
+  /* USER CODE END RTOS_MUTEX */
+
+  /* USER CODE BEGIN RTOS_SEMAPHORES */
+  /* add semaphores, ... */
+  /* USER CODE END RTOS_SEMAPHORES */
+
+  /* USER CODE BEGIN RTOS_TIMERS */
+  /* start timers, add new ones, ... */
+  /* USER CODE END RTOS_TIMERS */
+
+  /* USER CODE BEGIN RTOS_QUEUES */
+  /* add queues, ... */
+  g_dht11_queue = osMessageQueueNew(1, sizeof(dht11_data_t), NULL);
+  if (g_dht11_queue == NULL)
+  {
+    OLED_ShowString(2, 70, "RTOS Err!   ");
+    OLED_ShowString(4, 70, "Queue Fail ");
+    while (1) { }
+  }
+  /* USER CODE END RTOS_QUEUES */
+
+  /* Create the thread(s) */
+  /* creation of defaultTask */
+  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
+
+  /* USER CODE BEGIN RTOS_THREADS */
+  /* add threads, ... */
+  if (osThreadNew(Dht11OledTask, NULL, &dht11OledTask_attributes) == NULL)
+  {
+    OLED_ShowString(2, 70, "RTOS Err!   ");
+    OLED_ShowString(4, 70, "Task1 Fail ");
+    while (1) { }
+  }
+
+  if (osThreadNew(Hc05TxTask, NULL, &hc05TxTask_attributes) == NULL)
+  {
+    OLED_ShowString(2, 70, "RTOS Err!   ");
+    OLED_ShowString(4, 70, "Task2 Fail ");
+    while (1) { }
+  }
+  /* USER CODE END RTOS_THREADS */
+
+  /* USER CODE BEGIN RTOS_EVENTS */
+  /* add events, ... */
+  /* USER CODE END RTOS_EVENTS */
+
+  /* Start scheduler */
+  osKernelStart();
+
+  /* We should never get here as control is now taken by the scheduler */
+
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
     /* USER CODE END WHILE */
-    // LED 翻转：确认主循环在跑（如果 LED 不闪，说明程序卡住了）
-    LED1_Turn();
 
-    DHT11_RECdata(); // 获取 DHT11 数据
-    if(dht11_error_flag == 0)
-    {
-      // 获取数据失败，显示错误提示
-      OLED_ShowString(2, 70, "DHT11 Error!   ");
-    }
-    else
-    {
-      // 获取数据成功，显示温湿度
-      char temp_str[16], humi_str[16];
-      sprintf(temp_str, "%d.%d C", rec_data[2], rec_data[3]);
-      sprintf(humi_str, "%d.%d %%", rec_data[0], rec_data[1]);
-      OLED_ShowString(2, 70, temp_str); // 显示温度
-      OLED_ShowString(4, 70, humi_str); // 显示湿度
-      
-      // 通过串口发送到HC-05
-      char buf[50];
-      sprintf(buf, "T:%d.%d H:%d.%d\r\n", rec_data[2], rec_data[3], rec_data[0], rec_data[1]);
-      send_string(buf);
-    }
-    HAL_Delay(3000); // 延时3秒，避免读取过于频繁，提高 DHT11 稳定性
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
@@ -221,8 +287,120 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+static void Dht11OledTask(void *argument)
+{
+  (void)argument;
+
+  if (g_dht11_queue == NULL)
+  {
+    OLED_ShowString(2, 70, "RTOS Err!   ");
+    OLED_ShowString(4, 70, "Queue Null ");
+    osThreadExit();
+  }
+
+  uint8_t beat = 0;
+  for (;;)
+  {
+    // 任务心跳指示，确认任务确实在运行（显示在第一行最后一格）
+    OLED_ShowChar(1, 16, (beat++ & 1) ? '|' : '-');
+
+    // LED 翻转：确认任务在跑
+    LED1_Turn();
+
+    // DHT11 对时序很敏感，读取期间避免任务切换，但不要关闭中断
+    vTaskSuspendAll();
+    DHT11_RECdata(); // 获取 DHT11 数据
+    xTaskResumeAll();
+
+    dht11_data_t data;
+    data.humi_h = rec_data[0];
+    data.humi_l = rec_data[1];
+    data.temp_h = rec_data[2];
+    data.temp_l = rec_data[3];
+    data.valid = dht11_error_flag;
+
+    if (data.valid == 0)
+    {
+      // 获取数据失败，显示错误提示并清理湿度残留显示
+      OLED_ShowString(2, 8, "DHT11Err");
+      OLED_ShowString(4, 8, "DHT11Err");
+    }
+    else
+    {
+      // 获取数据成功，显示温湿度（固定宽度，覆盖旧内容）
+      char temp_str[16], humi_str[16];
+      snprintf(temp_str, sizeof(temp_str), "%2d.%1d C ", data.temp_h, data.temp_l);
+      snprintf(humi_str, sizeof(humi_str), "%2d.%1d %% ", data.humi_h, data.humi_l);
+      OLED_ShowString(2, 8, temp_str); // 显示温度
+      OLED_ShowString(4, 8, humi_str); // 显示湿度
+    }
+
+    // 将最新数据写入队列（队列满则丢弃旧数据）
+    if (g_dht11_queue != NULL)
+    {
+      osStatus_t st = osMessageQueuePut(g_dht11_queue, &data, 0, 0);
+      if (st == osErrorResource)
+      {
+        dht11_data_t drop;
+        (void)osMessageQueueGet(g_dht11_queue, &drop, NULL, 0);
+        (void)osMessageQueuePut(g_dht11_queue, &data, 0, 0);
+      }
+    }
+
+    osDelay(2000); // 2 秒刷新一次
+  }
+}
+
+static void Hc05TxTask(void *argument)
+{
+  (void)argument;
+
+  dht11_data_t data;
+  send_string("HC05 Task Start\r\n");
+  for (;;)
+  {
+    if (g_dht11_queue == NULL)
+    {
+      osDelay(100);
+      continue;
+    }
+
+    if (osMessageQueueGet(g_dht11_queue, &data, NULL, 2000) == osOK)
+    {
+      if (data.valid == 0)
+      {
+        send_string("DHT11 Error\r\n");
+      }
+      else
+      {
+        char buf[50];
+        sprintf(buf, "T:%d.%d H:%d.%d\r\n", data.temp_h, data.temp_l, data.humi_h, data.humi_l);
+        send_string(buf);
+      }
+    }
+    else
+    {
+      send_string("NO DATA\r\n");
+    }
+  }
+}
 
 /* USER CODE END 4 */
+
+/* USER CODE BEGIN Header_StartDefaultTask */
+/**
+  * @brief  Function implementing the defaultTask thread.
+  * @param  argument: Not used
+  * @retval None
+  */
+/* USER CODE END Header_StartDefaultTask */
+void StartDefaultTask(void *argument)
+{
+  /* USER CODE BEGIN 5 */
+  // 默认任务仅用于确认 RTOS 运行，之后退出，避免抢占用户任务
+  osThreadExit();
+  /* USER CODE END 5 */
+}
 
 /**
   * @brief  This function is executed in case of error occurrence.
